@@ -13,7 +13,6 @@ interface Location {
   y: number;
 }
 
-
 interface Point {
   number: number;
   location: Location;
@@ -31,7 +30,6 @@ function App() {
   const [autoPlay, setAutoPlay] = useState<boolean>(false);
   const [showWinModal, setShowWinModal] = useState<boolean>(false);
   const [showLoseModal, setShowLoseModal] = useState<boolean>(false);
-  const isAutoPlayRef = useRef<boolean>(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,6 +47,10 @@ function App() {
     if (status === Status.playing) {
       const interval = setInterval(() => {
         setPoints(prev => {
+          // Skip updates if nothing is clicked to avoid unnecessary re-renders
+          const hasClicked = prev.some(point => point.clicked);
+          if (!hasClicked) return prev;
+
           const updatedPoints = prev
             .map(point => {
               if (point.clicked) {
@@ -57,12 +59,12 @@ function App() {
                   return null;
                 }
 
-                return { ...point, remaining, opacity: point.remaining / 3 * 100 };
+                return { ...point, remaining, opacity: (remaining / 3) * 100 };
               }
 
               return point;
             })
-            .filter(point => point !== null);
+            .filter(point => point !== null) as Point[];
 
           if (updatedPoints.length === 0) {
             setStatus(Status.allCleared);
@@ -76,7 +78,7 @@ function App() {
 
       return () => clearInterval(interval);
     }
-  }, [status, points, current]);
+  }, [status]);
 
   useEffect(() => {
     if (status === Status.playing) {
@@ -88,8 +90,6 @@ function App() {
 
       return () => clearInterval(interval);
     }
-
-
   }, [autoPlay, status, current]);
 
   const handleStart = () => {
@@ -101,17 +101,19 @@ function App() {
     setStatus(Status.playing);
     setShowWinModal(false);
     setShowLoseModal(false);
-    isAutoPlayRef.current = false;
 
     const pointSize = 60;
     const boxWidth = boxRef.current?.clientWidth || 650;
     const boxHeight = boxRef.current?.clientHeight || 400;
 
-    for (let i = Number(amount); i >= 1; i--) {
+    const totalPoints = Math.max(1, Number.parseInt(amount, 10) || 0);
+    const newPoints: Point[] = [];
+    for (let i = totalPoints; i >= 1; i--) {
       const x = Math.floor(Math.random() * (boxWidth - pointSize)) + 1;
       const y = Math.floor(Math.random() * (boxHeight - pointSize)) + 1;
-      setPoints(points => [...points, { number: i, location: { x, y }, clicked: false, remaining: 3, opacity: 100 }]);
+      newPoints.push({ number: i, location: { x, y }, clicked: false, remaining: 3, opacity: 100 });
     }
+    setPoints(newPoints);
   }
 
   const handleClick = (number: number) => {
@@ -157,8 +159,9 @@ function App() {
           </div>
           <div className='flex flex-col gap-2 justify-between'>
             <input value={amount} onChange={(e) => {
-              setAmount(e.target.value)
-            }} type="string" className='border-2 border-gray-300 focus:border-blue-500 focus:outline-none rounded-md px-3 py-1 shadow-sm' />
+              const numeric = Math.max(1, Number.parseInt(e.target.value, 10) || 0);
+              setAmount(String(numeric));
+            }} type="number" min={1} className='border-2 border-gray-300 focus:border-blue-500 focus:outline-none rounded-md px-3 py-1 shadow-sm' />
             <p className='text-xl font-bold text-blue-600'>{(timer / 100).toFixed(1)}s</p>
           </div>
         </div>
@@ -182,7 +185,7 @@ function App() {
             {status === Status.playing && (
               <button
                 onClick={toggleAutoPlay}
-                className={`px-8 py-2 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${!isAutoPlayRef.current
+                className={`px-8 py-2 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${!autoPlay
                   ? 'bg-purple-500 text-white hover:bg-purple-600'
                   : 'bg-red-500 text-white hover:bg-red-600'
                   }`}
@@ -199,7 +202,7 @@ function App() {
             onClick={() => handleClick(point.number)}
             key={point.number}
             className={`
-              absolute w-13 h-13 rounded-full border-2 border-orange-500 flex items-center justify-center
+              absolute w-13 h-13 rounded-full border-2 border-orange-500
               hover:cursor-pointer select-none
               flex flex-col items-center justify-center
               transition-transform duration-[3s]
