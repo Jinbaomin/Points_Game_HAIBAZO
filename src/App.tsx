@@ -32,7 +32,7 @@ function App() {
   const [showLoseModal, setShowLoseModal] = useState<boolean>(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
-  console.log('Update dev');
+  console.log('Updated dev');
 
   useEffect(() => {
     let interval: any;
