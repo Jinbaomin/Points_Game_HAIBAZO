@@ -33,7 +33,7 @@ function App() {
   const boxRef = useRef<HTMLDivElement>(null);
 
   console.log('Updated dev v.1.0.1');
-  console.log('Task-2.0.0');
+  console.log('Task-2 2.0.1');
 
   useEffect(() => {
     let interval: any;
