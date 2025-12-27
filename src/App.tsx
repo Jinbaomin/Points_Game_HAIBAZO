@@ -32,6 +32,8 @@ function App() {
   const [showLoseModal, setShowLoseModal] = useState<boolean>(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
+  console.log('Task 1');
+
   console.log('Update dev');
 
   useEffect(() => {
